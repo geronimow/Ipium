@@ -34,6 +34,12 @@ namespace Ipium
             public string BlockInfo { get; set; }
         }
 
+        public static List<Block> GetAllBlocks()
+        {
+            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.BlockId).ToList();
+            return sortedBlocks;
+        }
+
         public static Block GetLastBlock()
         {
             if (blocks.Count == 0)
@@ -47,8 +53,8 @@ namespace Ipium
 
             return lastBlock;
         }
-
         public static List<Block> blocks = new List<Block>();
+
         public static async Task HandleIncomingConnections()
         {
             bool runServer = true;
@@ -63,13 +69,18 @@ namespace Ipium
                 HttpListenerRequest req = ctx.Request;
                 HttpListenerResponse resp = ctx.Response;
 
-                // Print out some info about the request
-                Console.WriteLine("Request #: {0}", ++requestCount);
-                Console.WriteLine(req.Url.ToString());
-                Console.WriteLine(req.HttpMethod);
-                Console.WriteLine(req.UserHostName);
-                Console.WriteLine(req.UserAgent);
-                Console.WriteLine();
+                if ((req.HttpMethod == "GET") && (req.Url.AbsolutePath == "/allblocks"))
+                {
+                    List<Block> allBlocks = GetAllBlocks();
+                    foreach (Block block in allBlocks)
+                    {
+                        Console.WriteLine("ID : " + block.BlockId);
+                        Console.WriteLine("Numéro : " + block.BlockNb);
+                        Console.WriteLine("Informations : " + block.BlockInfo);
+                        Console.WriteLine();
+                        Console.WriteLine();
+                    }
+                }
 
                 if ((req.HttpMethod == "GET") && (req.Url.AbsolutePath == "/lastblock"))
                 {
@@ -89,7 +100,6 @@ namespace Ipium
 
                 if ((req.HttpMethod == "GET") && (req.Url.AbsolutePath == "/storage"))
                 {
-                    // Write the response info
                     byte[] data = Encoding.UTF8.GetBytes("Storage good");
                     resp.ContentType = "text/html";
                     resp.ContentEncoding = Encoding.UTF8;
@@ -118,7 +128,7 @@ namespace Ipium
 
                     if (blockNb != null && blocks.Exists(b => b.BlockNb == blockNb))
                     {
-                        data = Encoding.UTF8.GetBytes("Erreur : Un bloc avec le numéro \" + blockNb + \" existe déjà.");
+                        data = Encoding.UTF8.GetBytes("Erreur : Le bloc numero \"" + blockNb + "\' existe déjà.");
                     }
                     else
                     {
