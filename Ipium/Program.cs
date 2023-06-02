@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,9 +38,6 @@ namespace Ipium
         public class Block
         {
             public String Index { get; set; }
-            public string BlockNb { get; set; }
-
-            public string BlockInfo { get; set; }
             public DateTime Timestamp { get; set; } = DateTime.Now;
             public string PreviousHash { get; set; }
             public string Hash { get; set; }
@@ -97,9 +95,9 @@ namespace Ipium
                     List<Block> allBlocks = GetAllBlocks();
                     foreach (Block block in allBlocks)
                     {
-                        Console.WriteLine("ID : " + block.Index);
-                        Console.WriteLine("Numéro : " + block.BlockNb);
-                        Console.WriteLine("Informations : " + block.BlockInfo);
+                        Console.WriteLine("Numéro : " + block.Index);
+                        Console.WriteLine("Hash : " + block.Hash);
+                        Console.WriteLine("Transactions : " + block.Transactions);
                         Console.WriteLine();
                         Console.WriteLine();
                     }
@@ -115,9 +113,9 @@ namespace Ipium
                     }
                     else
                     {
-                        Console.WriteLine("Dernier bloc - ID : " + lastBlock.Index);
-                        Console.WriteLine("Dernier bloc - Numéro : " + lastBlock.BlockNb);  
-                        Console.WriteLine("Dernier bloc - Informations : " + lastBlock.BlockInfo);
+                        Console.WriteLine("Dernier bloc - Numéro : " + lastBlock.Index);
+                        Console.WriteLine("Dernier bloc - Hash : " + lastBlock.Hash);  
+                        Console.WriteLine("Dernier bloc - Transactions : " + lastBlock.Transactions);
                     }
                 }
 
@@ -127,45 +125,45 @@ namespace Ipium
                     resp.ContentType = "text/html";
                     resp.ContentEncoding = Encoding.UTF8;
 
-                    String blockId = req.QueryString["blockId"];
-                    String blockNb = req.QueryString["blockNb"];
-                    String blockInfo = req.QueryString["blockInfo"];
+                    String blockIndex = req.QueryString["blockIndex"];
+                    String blockHash = req.QueryString["blockHash"];
+                    String blockTransactions = req.QueryString["blockTransactions"];
                     int blockNbParse;
 
-                    if (string.IsNullOrEmpty(blockId) || blockId.Length < 64) 
+                    if (string.IsNullOrEmpty(blockIndex) || blockIndex.Length < 64) 
                     {
-                        data = Encoding.UTF8.GetBytes("\"Erreur : L'ID de bloc est manquant dans la requête.\"");
+                        data = Encoding.UTF8.GetBytes("\"Erreur : L'indexe de bloc est manquant dans la requête.\"");
                     }
 
-                    if (!Int32.TryParse(blockNb, out blockNbParse))
+                    if (!Int32.TryParse(blockHash, out blockNbParse))
                     {
-                        data = Encoding.UTF8.GetBytes("Erreur : Le NB de bloc est manquant dans la requête.\"");
+                        data = Encoding.UTF8.GetBytes("Erreur : Le Hash de bloc est manquant dans la requête.\"");
                     }
 
-                    if (string.IsNullOrEmpty(blockInfo))
+                    if (string.IsNullOrEmpty(blockTransactions))
                     {
-                        data = Encoding.UTF8.GetBytes("Erreur : L'info de bloc est manquant dans la requête.");
+                        data = Encoding.UTF8.GetBytes("Erreur : La transaction de bloc est manquant dans la requête.");
                     }
 
-                    if (blockNb != null && blocks.Exists(b => b.BlockNb == blockNb))
+                    if (blockHash != null && blocks.Exists(b => b.Hash == blockHash))
                     {
-                        data = Encoding.UTF8.GetBytes("Erreur : Le bloc numero \"" + blockNb + "\' existe déjà.");
+                        data = Encoding.UTF8.GetBytes("Erreur : Le bloc numero \"" + blockHash + "\' existe déjà.");
                     }
                     else
                     {
                         Block newBlock = new Block
                         {
-                            Index = blockId,
-                            BlockNb = blockNb,
-                            BlockInfo = blockInfo
+                            Index = blockIndex,
+                            Hash = blockHash,
+                            Transactions = blockTransactions
                         };
                        
                         blocks.Add(newBlock);
                         Console.WriteLine("Bloc ajouté avec succès !");
                         data = Encoding.UTF8.GetBytes("Bloc ajouté avec succès !");
-                        Console.WriteLine("ID : " + blockId);
-                        Console.WriteLine("Numéro : " + blockNb);
-                        Console.WriteLine("Informations : " + blockInfo);
+                        Console.WriteLine("ID : " + blockIndex);
+                        Console.WriteLine("Numéro : " + blockHash);
+                        Console.WriteLine("Informations : " + blockTransactions);
 
                     }
                     // Write out to the response stream (asynchronously), then close it
