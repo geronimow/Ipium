@@ -1,7 +1,10 @@
 ﻿using System;
+
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static Ipium.Program;
@@ -27,16 +30,36 @@ namespace Ipium
             "  </body>" +
             "</html>";
 
+        public class Transaction
+        {
+          
+        }
         public class Block
         {
-            public string BlockId { get; set; }
+            public String Index { get; set; }
             public string BlockNb { get; set; }
+
             public string BlockInfo { get; set; }
+            public DateTime Timestamp { get; set; } = DateTime.Now;
+            public string PreviousHash { get; set; }
+            public string Hash { get; set; }
+            public int Nonce { get; set; }
+            public List<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+            public void CalculateHash()
+            {
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    string data = Index.ToString() + Timestamp.ToString() + PreviousHash + Nonce.ToString();
+                    byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(data));
+                    Hash = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
+                }
+            }
         }
 
         public static List<Block> GetAllBlocks()
         {
-            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.BlockId).ToList();
+            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.Index).ToList();
             return sortedBlocks;
         }
 
@@ -47,7 +70,7 @@ namespace Ipium
                 return null;
             }
 
-            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.BlockId).ToList();
+            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.Index).ToList();
 
             Block lastBlock = sortedBlocks[0];
 
@@ -74,7 +97,7 @@ namespace Ipium
                     List<Block> allBlocks = GetAllBlocks();
                     foreach (Block block in allBlocks)
                     {
-                        Console.WriteLine("ID : " + block.BlockId);
+                        Console.WriteLine("ID : " + block.Index);
                         Console.WriteLine("Numéro : " + block.BlockNb);
                         Console.WriteLine("Informations : " + block.BlockInfo);
                         Console.WriteLine();
@@ -92,7 +115,7 @@ namespace Ipium
                     }
                     else
                     {
-                        Console.WriteLine("Dernier bloc - ID : " + lastBlock.BlockId);
+                        Console.WriteLine("Dernier bloc - ID : " + lastBlock.Index);
                         Console.WriteLine("Dernier bloc - Numéro : " + lastBlock.BlockNb);  
                         Console.WriteLine("Dernier bloc - Informations : " + lastBlock.BlockInfo);
                     }
@@ -132,7 +155,7 @@ namespace Ipium
                     {
                         Block newBlock = new Block
                         {
-                            BlockId = blockId,
+                            Index = blockId,
                             BlockNb = blockNb,
                             BlockInfo = blockInfo
                         };
@@ -163,7 +186,8 @@ namespace Ipium
         }
         static void Main(string[] args)
         {
-            // Create a Http server and start listening for incoming connections
+            // Create a Http server and start listening for incoming connection
+
             listener = new HttpListener();
             listener.Prefixes.Add(url);
             listener.Start();
@@ -172,6 +196,17 @@ namespace Ipium
             // Handle requests
             Task listenTask = HandleIncomingConnections();
             listenTask.GetAwaiter().GetResult();
+
+            //Generatin genesis block
+            var blockGenesis = new Block();
+            blockGenesis.Index = "0";
+            blockGenesis.Timestamp = DateTime.Now;
+            blockGenesis.PreviousHash = "0000000000000000000000000000000000000000000000000000000000000000";
+            blockGenesis.Nonce = 0;
+            blockGenesis.CalculateHash();
+
+            blocks.Add(blockGenesis);
+
 
             // Close the listener
             listener.Close();
