@@ -109,8 +109,6 @@ namespace Ipium
                     String blockInfo = req.QueryString["blockInfo"];
                     int blockNbParse;
 
-                    Console.WriteLine("Storage requested");
-
                     if (string.IsNullOrEmpty(blockId) || blockId.Length < 64) 
                     {
                         data = Encoding.UTF8.GetBytes("\"Erreur : L'ID de bloc est manquant dans la requête.\"");
