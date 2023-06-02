@@ -101,7 +101,7 @@ namespace Ipium
                             BlockNb = blockNb,
                             BlockInfo = blockInfo
                         };
-
+                        //test
                         blocks.Add(newBlock);
                         Console.WriteLine("Bloc ajouté avec succès !");
                     }
