@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using static Ipium.Program;
 
 namespace Ipium
 {
@@ -33,6 +34,20 @@ namespace Ipium
             public string BlockInfo { get; set; }
         }
 
+        public static Block GetLastBlock()
+        {
+            if (blocks.Count == 0)
+            {
+                return null;
+            }
+
+            List<Block> sortedBlocks = blocks.OrderByDescending(b => b.BlockId).ToList();
+
+            Block lastBlock = sortedBlocks[0];
+
+            return lastBlock;
+        }
+
         public static List<Block> blocks = new List<Block>();
         public static async Task HandleIncomingConnections()
         {
@@ -56,13 +71,28 @@ namespace Ipium
                 Console.WriteLine(req.UserAgent);
                 Console.WriteLine();
 
+                if ((req.HttpMethod == "GET") && (req.Url.AbsolutePath == "/lastblock"))
+                {
+                    Block lastBlock = GetLastBlock();
+
+                    if (lastBlock == null)
+                    {
+                        Console.WriteLine("Aucun bloc dans la liste.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Dernier bloc - ID : " + lastBlock.BlockId);
+                        Console.WriteLine("Dernier bloc - Numéro : " + lastBlock.BlockNb);  
+                        Console.WriteLine("Dernier bloc - Informations : " + lastBlock.BlockInfo);
+                    }
+                }
+
                 if ((req.HttpMethod == "GET") && (req.Url.AbsolutePath == "/storage"))
                 {
                     // Write the response info
                     byte[] data = Encoding.UTF8.GetBytes("Storage good");
                     resp.ContentType = "text/html";
                     resp.ContentEncoding = Encoding.UTF8;
-                    resp.ContentLength64 = data.LongLength;
 
                     String blockId = req.QueryString["blockId"];
                     String blockNb = req.QueryString["blockNb"];
@@ -73,25 +103,22 @@ namespace Ipium
 
                     if (string.IsNullOrEmpty(blockId) || blockId.Length < 64) 
                     {
-                        Console.WriteLine("Erreur : L'ID de bloc est manquant dans la requête.");
-                        return;
+                        data = Encoding.UTF8.GetBytes("\"Erreur : L'ID de bloc est manquant dans la requête.\"");
                     }
 
                     if (!Int32.TryParse(blockNb, out blockNbParse))
                     {
-                        Console.WriteLine("Erreur : Le NB de bloc est manquant dans la requête.");
-                        return;
+                        data = Encoding.UTF8.GetBytes("Erreur : Le NB de bloc est manquant dans la requête.\"");
                     }
 
                     if (string.IsNullOrEmpty(blockInfo))
                     {
-                        Console.WriteLine("Erreur : L'info de bloc est manquant dans la requête.");
-                        return;
+                        data = Encoding.UTF8.GetBytes("Erreur : L'info de bloc est manquant dans la requête.");
                     }
 
                     if (blockNb != null && blocks.Exists(b => b.BlockNb == blockNb))
                     {
-                        Console.WriteLine("Erreur : Un bloc avec le numéro " + blockNb + " existe déjà.");
+                        data = Encoding.UTF8.GetBytes("Erreur : Un bloc avec le numéro \" + blockNb + \" existe déjà.");
                     }
                     else
                     {
@@ -101,14 +128,29 @@ namespace Ipium
                             BlockNb = blockNb,
                             BlockInfo = blockInfo
                         };
-                        //test
+                       
                         blocks.Add(newBlock);
                         Console.WriteLine("Bloc ajouté avec succès !");
+                        data = Encoding.UTF8.GetBytes("Bloc ajouté avec succès !");
+                        Console.WriteLine("ID : " + blockId);
+                        Console.WriteLine("Numéro : " + blockNb);
+                        Console.WriteLine("Informations : " + blockInfo);
+
                     }
                     // Write out to the response stream (asynchronously), then close it
+                    resp.ContentLength64 = data.LongLength;
                     await resp.OutputStream.WriteAsync(data, 0, data.Length);
                     resp.Close();
-                }             
+                }     
+                else
+                {
+                    byte[] data = Encoding.UTF8.GetBytes("Hello !");
+                    resp.ContentType = "text/html";
+                    resp.ContentEncoding = Encoding.UTF8;
+                    resp.ContentLength64 = data.LongLength;
+                    await resp.OutputStream.WriteAsync(data, 0, data.Length);
+                    resp.Close();
+                }
             }
         }
         static void Main(string[] args)
