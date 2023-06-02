@@ -1,14 +1,11 @@
 ﻿using System;
-
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using static Ipium.Program;
+using Newtonsoft.Json;
 
 namespace Ipium
 {
@@ -95,11 +92,8 @@ namespace Ipium
                     List<Block> allBlocks = GetAllBlocks();
                     foreach (Block block in allBlocks)
                     {
-                        Console.WriteLine("Numéro : " + block.Index);
-                        Console.WriteLine("Hash : " + block.Hash);
-                        Console.WriteLine("Transactions : " + block.Transactions);
-                        Console.WriteLine();
-                        Console.WriteLine();
+                        JsonConvert.SerializeObject(allBlocks);
+                        Console.WriteLine(allBlocks);
                     }
                 }
 
@@ -155,7 +149,6 @@ namespace Ipium
                         {
                             Index = blockIndex,
                             Hash = blockHash,
-                            Transactions = blockTransactions
                         };
                        
                         blocks.Add(newBlock);
@@ -163,8 +156,6 @@ namespace Ipium
                         data = Encoding.UTF8.GetBytes("Bloc ajouté avec succès !");
                         Console.WriteLine("ID : " + blockIndex);
                         Console.WriteLine("Numéro : " + blockHash);
-                        Console.WriteLine("Informations : " + blockTransactions);
-
                     }
                     // Write out to the response stream (asynchronously), then close it
                     resp.ContentLength64 = data.LongLength;
